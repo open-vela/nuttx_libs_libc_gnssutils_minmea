@@ -18,7 +18,7 @@ test: tests
 
 scan-build: clean
 	@echo "+++ Running Clang Static Analyzer..."
-	scan-build --status-bugs --keep-going $(MAKE) tests
+	scan-build $(MAKE) tests
 
 clean:
 	$(RM) tests example *.o
