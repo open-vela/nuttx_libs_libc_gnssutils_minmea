@@ -28,12 +28,13 @@ extern "C" {
 enum minmea_sentence_id {
     MINMEA_INVALID = -1,
     MINMEA_UNKNOWN = 0,
-    MINMEA_SENTENCE_RMC,
+    MINMEA_SENTENCE_GBS,
     MINMEA_SENTENCE_GGA,
-    MINMEA_SENTENCE_GSA,
     MINMEA_SENTENCE_GLL,
+    MINMEA_SENTENCE_GSA,
     MINMEA_SENTENCE_GST,
     MINMEA_SENTENCE_GSV,
+    MINMEA_SENTENCE_RMC,
     MINMEA_SENTENCE_VTG,
     MINMEA_SENTENCE_ZDA,
 };
@@ -54,6 +55,17 @@ struct minmea_time {
     int minutes;
     int seconds;
     int microseconds;
+};
+
+struct minmea_sentence_gbs {
+    struct minmea_time time;
+    struct minmea_float err_latitude;
+    struct minmea_float err_longitude;
+    struct minmea_float err_altitude;
+    int svid;
+    struct minmea_float prob;
+    struct minmea_float bias;
+    struct minmea_float stddev;
 };
 
 struct minmea_sentence_rmc {
@@ -199,6 +211,7 @@ bool minmea_scan(const char *sentence, const char *format, ...);
 /*
  * Parse a specific type of sentence. Return true on success.
  */
+bool minmea_parse_gbs(struct minmea_sentence_gbs *frame, const char *sentence);
 bool minmea_parse_rmc(struct minmea_sentence_rmc *frame, const char *sentence);
 bool minmea_parse_gga(struct minmea_sentence_gga *frame, const char *sentence);
 bool minmea_parse_gsa(struct minmea_sentence_gsa *frame, const char *sentence);
@@ -221,7 +234,7 @@ int minmea_gettime(struct timespec *ts, const struct minmea_date *date, const st
 /**
  * Rescale a fixed-point value to a different scale. Rounds towards zero.
  */
-static inline int_least32_t minmea_rescale(struct minmea_float *f, int_least32_t new_scale)
+static inline int_least32_t minmea_rescale(const struct minmea_float *f, int_least32_t new_scale)
 {
     if (f->scale == 0)
         return 0;
@@ -237,7 +250,7 @@ static inline int_least32_t minmea_rescale(struct minmea_float *f, int_least32_t
  * Convert a fixed-point value to a floating-point value.
  * Returns NaN for "unknown" values.
  */
-static inline float minmea_tofloat(struct minmea_float *f)
+static inline float minmea_tofloat(const struct minmea_float *f)
 {
     if (f->scale == 0)
         return NAN;
@@ -248,9 +261,13 @@ static inline float minmea_tofloat(struct minmea_float *f)
  * Convert a raw coordinate to a floating point DD.DDD... value.
  * Returns NaN for "unknown" values.
  */
-static inline float minmea_tocoord(struct minmea_float *f)
+static inline float minmea_tocoord(const struct minmea_float *f)
 {
     if (f->scale == 0)
+        return NAN;
+    if (f->scale  > (INT_LEAST32_MAX / 100))
+        return NAN;
+    if (f->scale < (INT_LEAST32_MIN / 100))
         return NAN;
     int_least32_t degrees = f->value / (f->scale * 100);
     int_least32_t minutes = f->value % (f->scale * 100);
