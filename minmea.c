@@ -364,6 +364,7 @@ enum minmea_sentence_id minmea_sentence_id(const char *sentence, bool strict)
         return MINMEA_INVALID;
 
     char type[6];
+    char sub_type[4];
     if (!minmea_scan(sentence, "t", type))
         return MINMEA_INVALID;
 
@@ -385,6 +386,12 @@ enum minmea_sentence_id minmea_sentence_id(const char *sentence, bool strict)
         return MINMEA_SENTENCE_VTG;
     if (!strcmp(type+2, "ZDA"))
         return MINMEA_SENTENCE_ZDA;
+    if (!strcmp(type+2, "LOR")) {
+        if (!minmea_scan(sentence, "__s", sub_type))
+            return MINMEA_INVALID;
+        if (!strcmp(sub_type, "LSQ"))
+            return MINMEA_SENTENCE_LOR_LSQ;
+    }
 
     return MINMEA_UNKNOWN;
 }
@@ -581,6 +588,49 @@ bool minmea_parse_gsv(struct minmea_sentence_gsv *frame, const char *sentence)
     }
     if (strcmp(type+2, "GSV"))
         return false;
+
+    return true;
+}
+
+bool minmea_parse_lor_lsq(struct minmea_sentence_lor_lsq *frame, const char *sentence)
+{
+  // $PGLOR,1,LSQ,hhmmss.ss,llll.ll,N,yyyy.yy,E,h.h,h.h,a.a,a.a,a.a,s.s,s.s,v.v,v.v,tt.t,tt.t,ss,h.h,h.h*CC
+  char type[6];
+  char sub_type[4];
+  int latitude_direction;
+  int longitude_direction;
+
+  if (!minmea_scan(sentence, "t_sTfdfdfffffffffffiff",
+          type,
+          sub_type,
+          &frame->time,
+          &frame->latitude,
+          &latitude_direction,
+          &frame->longitude,
+          &longitude_direction,
+          &frame->env_range_resid,
+          &frame->hdop,
+          &frame->altitude,
+          &frame->altitude_err,
+          &frame->vdop,
+          &frame->hspeed,
+          &frame->hspeed_err,
+          &frame->vspeed,
+          &frame->vspeed_err,
+          &frame->azimuth_true_north,
+          &frame->track_err,
+          &frame->satellites_used,
+          &frame->bias_estimation_gnss,
+          &frame->bias_estimation_sigma))
+        return false;
+    if (strcmp(type + 2, "LOR"))
+        return false;
+
+    if (strcmp(sub_type, "LSQ"))
+        return false;
+
+    frame->latitude.value *= latitude_direction;
+    frame->longitude.value *= longitude_direction;
 
     return true;
 }

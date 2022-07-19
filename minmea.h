@@ -36,6 +36,7 @@ enum minmea_sentence_id {
     MINMEA_SENTENCE_GSA,
     MINMEA_SENTENCE_GST,
     MINMEA_SENTENCE_GSV,
+    MINMEA_SENTENCE_LOR_LSQ,
     MINMEA_SENTENCE_RMC,
     MINMEA_SENTENCE_VTG,
     MINMEA_SENTENCE_ZDA,
@@ -162,6 +163,26 @@ struct minmea_sentence_gsv {
     struct minmea_sat_info sats[4];
 };
 
+struct minmea_sentence_lor_lsq {
+    struct minmea_time time;
+    struct minmea_float latitude;
+    struct minmea_float longitude;
+    struct minmea_float env_range_resid;
+    struct minmea_float hdop;
+    struct minmea_float altitude;
+    struct minmea_float altitude_err;
+    struct minmea_float vdop;
+    struct minmea_float hspeed;
+    struct minmea_float hspeed_err;
+    struct minmea_float vspeed;
+    struct minmea_float vspeed_err;
+    struct minmea_float azimuth_true_north;
+    struct minmea_float track_err;
+    int satellites_used;
+    struct minmea_float bias_estimation_gnss;
+    struct minmea_float bias_estimation_sigma;
+};
+
 struct minmea_sentence_vtg {
     struct minmea_float true_track_degrees;
     struct minmea_float magnetic_track_degrees;
@@ -220,6 +241,7 @@ bool minmea_parse_gsa(struct minmea_sentence_gsa *frame, const char *sentence);
 bool minmea_parse_gll(struct minmea_sentence_gll *frame, const char *sentence);
 bool minmea_parse_gst(struct minmea_sentence_gst *frame, const char *sentence);
 bool minmea_parse_gsv(struct minmea_sentence_gsv *frame, const char *sentence);
+bool minmea_parse_lor_lsq(struct minmea_sentence_lor_lsq *frame, const char *sentence);
 bool minmea_parse_vtg(struct minmea_sentence_vtg *frame, const char *sentence);
 bool minmea_parse_zda(struct minmea_sentence_zda *frame, const char *sentence);
 
